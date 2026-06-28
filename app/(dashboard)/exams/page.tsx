@@ -1,22 +1,18 @@
 "use client";
 
-import { useState } from "react";
 import { Header } from "@/components/layout/header";
 import { UploadZone } from "@/components/exams/upload-zone";
 import { ExamCard } from "@/components/exams/exam-card";
 import { MarkersTimeline } from "@/components/exams/markers-timeline";
 import { useAuth } from "@/lib/hooks/useAuth";
-import { useExams, useMarkerNames } from "@/lib/hooks/use-exams";
+import { useExams, useMarkersGrouped } from "@/lib/hooks/use-exams";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FlaskConical, TrendingUp } from "lucide-react";
 
 export default function ExamsPage() {
   const { user } = useAuth();
   const { exams, loading } = useExams(user?.uid ?? null);
-  const markerNames = useMarkerNames(user?.uid ?? null);
-  const [selectedMarker, setSelectedMarker] = useState<string | null>(null);
-
-  const activeMarker = selectedMarker ?? markerNames[0] ?? null;
+  const { totalMarkers } = useMarkersGrouped(user?.uid ?? null);
 
   if (!user) return null;
 
@@ -38,9 +34,9 @@ export default function ExamsPage() {
             <TabsTrigger value="timeline" className="flex items-center gap-2">
               <TrendingUp className="h-3.5 w-3.5" />
               Linha do Tempo
-              {markerNames.length > 0 && (
+              {totalMarkers > 0 && (
                 <span className="ml-1 text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full">
-                  {markerNames.length}
+                  {totalMarkers}
                 </span>
               )}
             </TabsTrigger>
@@ -78,22 +74,7 @@ export default function ExamsPage() {
           </TabsContent>
 
           <TabsContent value="timeline" className="mt-6">
-            {markerNames.length === 0 ? (
-              <div className="text-center py-16">
-                <TrendingUp className="h-10 w-10 mx-auto text-muted-foreground/30 mb-3" />
-                <p className="text-sm text-muted-foreground">Nenhum marcador disponível</p>
-                <p className="text-xs text-muted-foreground/60 mt-1">
-                  Carregue exames para visualizar a linha do tempo
-                </p>
-              </div>
-            ) : (
-              <MarkersTimeline
-                userId={user.uid}
-                markerName={activeMarker!}
-                markerNames={markerNames}
-                onSelectMarker={setSelectedMarker}
-              />
-            )}
+            <MarkersTimeline userId={user.uid} />
           </TabsContent>
         </Tabs>
       </div>
