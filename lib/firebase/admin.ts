@@ -4,7 +4,6 @@ import { getAuth } from "firebase-admin/auth";
 
 function getAdminApp() {
   if (getApps().length > 0) return getApp();
-
   return initializeApp({
     credential: cert({
       projectId: process.env.FIREBASE_PROJECT_ID,
@@ -14,6 +13,10 @@ function getAdminApp() {
   });
 }
 
-export const adminApp = getAdminApp();
-export const adminDb = getFirestore(adminApp);
-export const adminAuth = getAuth(adminApp);
+export function getAdminAuth() {
+  return getAuth(getAdminApp());
+}
+
+export function getAdminDb() {
+  return getFirestore(getAdminApp());
+}

@@ -1,4 +1,4 @@
-import { adminAuth } from "@/lib/firebase/admin";
+import { getAdminAuth } from "@/lib/firebase/admin";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
   const { token } = await request.json();
 
   try {
-    await adminAuth.verifyIdToken(token);
+    await getAdminAuth().verifyIdToken(token);
     const cookieStore = await cookies();
     cookieStore.set("session", token, {
       httpOnly: true,
