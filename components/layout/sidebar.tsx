@@ -1,8 +1,8 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { Logo } from "@/components/ui/logo";
 import {
-  Activity,
   Apple,
   Calendar,
   CalendarDays,
@@ -34,13 +34,9 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-60 shrink-0 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex flex-col h-screen sticky top-0">
-      <div className="px-6 py-5 border-b border-zinc-200 dark:border-zinc-800">
-        <div className="flex items-center gap-2">
-          <Activity className="h-5 w-5 text-zinc-900 dark:text-zinc-50" />
-          <span className="font-bold text-lg tracking-tight">BBAI</span>
-        </div>
-        <p className="text-xs text-zinc-400 mt-0.5">Gestão de Saúde</p>
+    <aside className="w-60 shrink-0 border-r border-border bg-background flex flex-col h-screen sticky top-0">
+      <div className="px-5 py-5 border-b border-border">
+        <Logo iconSize={32} />
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
@@ -51,15 +47,26 @@ export function Sidebar() {
             className={cn(
               "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
               pathname === href
-                ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50"
-                : "text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-zinc-50"
+                ? "bg-secondary text-primary"
+                : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
             )}
           >
-            <Icon className="h-4 w-4 shrink-0" />
+            <Icon
+              className={cn(
+                "h-4 w-4 shrink-0",
+                pathname === href ? "text-primary" : "text-muted-foreground"
+              )}
+            />
             {label}
           </Link>
         ))}
       </nav>
+
+      <div className="px-5 py-3 border-t border-border">
+        <p className="text-[10px] text-muted-foreground/40 uppercase tracking-widest">
+          v0.1.0-beta
+        </p>
+      </div>
     </aside>
   );
 }

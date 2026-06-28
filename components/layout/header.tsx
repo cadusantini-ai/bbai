@@ -20,19 +20,26 @@ export function Header({ title }: HeaderProps) {
   }
 
   const initials = user?.displayName
-    ? user.displayName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+    ? user.displayName
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
     : "?";
 
   return (
-    <header className="h-14 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-6 bg-white dark:bg-zinc-950">
-      <h1 className="font-semibold text-sm text-zinc-900 dark:text-zinc-50">{title}</h1>
-      <button onClick={handleLogout} className="flex items-center gap-2 group">
-        <span className="text-xs text-zinc-400 group-hover:text-zinc-600 transition-colors">
+    <header className="h-14 border-b border-border flex items-center justify-between px-6 bg-background/80 backdrop-blur-sm sticky top-0 z-10">
+      <h1 className="font-semibold text-sm text-foreground">{title}</h1>
+      <button onClick={handleLogout} className="flex items-center gap-2.5 group">
+        <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">
           {user?.displayName ?? user?.email}
         </span>
-        <Avatar className="h-7 w-7">
+        <Avatar className="h-7 w-7 ring-1 ring-border">
           <AvatarImage src={user?.photoURL ?? undefined} />
-          <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+          <AvatarFallback className="text-xs bg-secondary text-primary font-semibold">
+            {initials}
+          </AvatarFallback>
         </Avatar>
       </button>
     </header>
