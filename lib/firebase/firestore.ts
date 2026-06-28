@@ -1,4 +1,5 @@
 import {
+  QueryConstraint,
   addDoc,
   collection,
   deleteDoc,
@@ -59,7 +60,7 @@ export async function queryDocuments(
   orderByField?: string
 ) {
   const ref = userCollection(userId, col);
-  const constraints = filters.map(({ field, value }) => where(field, "==", value));
+  const constraints: QueryConstraint[] = filters.map(({ field, value }) => where(field, "==", value));
   if (orderByField) constraints.push(orderBy(orderByField, "desc"));
   const q = query(ref, ...constraints);
   return getDocs(q);
