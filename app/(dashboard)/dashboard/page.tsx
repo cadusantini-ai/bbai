@@ -5,6 +5,7 @@ import {
   Calendar,
   CalendarDays,
   Dumbbell,
+  FlaskConical,
   Moon,
   Pill,
   Shield,
@@ -76,6 +77,13 @@ const modules = [
     icon: CalendarDays,
     description: "Linha do tempo de saúde",
     color: "#8B92A9",
+  },
+  {
+    href: "/exams",
+    label: "Exames",
+    icon: FlaskConical,
+    description: "Laudos e marcadores ao longo do tempo",
+    color: "#8B5CF6",
   },
 ];
 

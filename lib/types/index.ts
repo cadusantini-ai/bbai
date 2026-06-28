@@ -149,6 +149,48 @@ export interface HealthEvent extends BaseDocument {
   attachments?: string[];
 }
 
+// Exams
+export type ExamStatus = "uploading" | "processing" | "done" | "error";
+export type ExamCategory =
+  | "hematologia"
+  | "bioquimica"
+  | "hormonal"
+  | "hepatica"
+  | "renal"
+  | "urina"
+  | "imagem"
+  | "outros";
+export type MarkerStatus = "normal" | "alto" | "baixo" | "desconhecido";
+
+export interface Exam extends BaseDocument {
+  fileName: string;
+  filePath: string;
+  fileUrl: string;
+  fileSize: number;
+  mimeType: string;
+  status: ExamStatus;
+  examDate: string | null;
+  labName: string | null;
+  category: ExamCategory | null;
+  markerCount: number;
+  errorMessage: string | null;
+  extractedAt: Timestamp | null;
+}
+
+export interface ExamMarker extends BaseDocument {
+  examId: string;
+  examDate: string;
+  labName: string;
+  category: ExamCategory;
+  marker: string;
+  markerRaw: string;
+  value: number;
+  unit: string;
+  referenceMin: number | null;
+  referenceMax: number | null;
+  status: MarkerStatus;
+}
+
 // Sleep
 export interface SleepLog extends BaseDocument {
   date: string;

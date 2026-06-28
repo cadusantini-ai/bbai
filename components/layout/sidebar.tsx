@@ -7,6 +7,7 @@ import {
   Calendar,
   CalendarDays,
   Dumbbell,
+  FlaskConical,
   Heart,
   Moon,
   Pill,
@@ -28,6 +29,7 @@ const navItems = [
   { href: "/goals", label: "Objetivos", icon: Target },
   { href: "/vaccines", label: "Vacinas", icon: Syringe },
   { href: "/events", label: "Eventos", icon: CalendarDays },
+  { href: "/exams", label: "Exames", icon: FlaskConical },
 ];
 
 export function Sidebar() {
