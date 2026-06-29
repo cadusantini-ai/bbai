@@ -8,13 +8,14 @@ export async function POST(request: NextRequest) {
   const { token } = await request.json();
 
   try {
-    await getAdminAuth().verifyIdToken(token);
+    const expiresIn = 60 * 60 * 24 * 7 * 1000; // 7 days in ms
+    const sessionCookie = await getAdminAuth().createSessionCookie(token, { expiresIn });
     const cookieStore = await cookies();
-    cookieStore.set("session", token, {
+    cookieStore.set("session", sessionCookie, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: 60 * 60 * 24 * 7,
       path: "/",
     });
     return NextResponse.json({ ok: true });

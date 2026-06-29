@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
 
   let userId: string;
   try {
-    const decoded = await getAdminAuth().verifyIdToken(session);
+    const decoded = await getAdminAuth().verifySessionCookie(session, true);
     userId = decoded.uid;
   } catch {
     return NextResponse.json({ error: "Sessão inválida" }, { status: 401 });
