@@ -1,0 +1,29 @@
+# Arquivos pesados — nunca precisam ser lidos pelo Claude
+node_modules/
+.next/
+out/
+build/
+dist/
+.firebase/
+.apphosting/
+
+# Arquivos gerados / lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+*.min.js
+*.min.css
+
+# Logs e credenciais
+*.log
+*-firebase-adminsdk-*.json
+
+# Assets binários
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.ico
+*.woff
+*.woff2
+*.ttf

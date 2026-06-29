@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { getAdminAuth, getAdminDb } from "@/lib/firebase/admin";
-import { extractExamFromGCS } from "@/lib/gemini/extract-exam";
+import { extractExamFromUrl } from "@/lib/gemini/extract-exam";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
@@ -21,8 +21,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Sessão inválida" }, { status: 401 });
   }
 
-  const { examId, filePath, mimeType } = await request.json();
-  if (!examId || !filePath || !mimeType) {
+  const { examId, fileUrl, mimeType } = await request.json();
+  if (!examId || !fileUrl || !mimeType) {
     return NextResponse.json({ error: "Parâmetros inválidos" }, { status: 400 });
   }
 
@@ -32,10 +32,7 @@ export async function POST(request: NextRequest) {
   await examRef.update({ status: "processing", updatedAt: FieldValue.serverTimestamp() });
 
   try {
-    const bucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET!;
-    const gcsUri = `gs://${bucket}/${filePath}`;
-
-    const extracted = await extractExamFromGCS(gcsUri, mimeType);
+    const extracted = await extractExamFromUrl(fileUrl, mimeType);
 
     const markersCol = db.collection("users").doc(userId).collection("exam_markers");
 

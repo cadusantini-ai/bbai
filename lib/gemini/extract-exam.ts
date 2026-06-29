@@ -1,4 +1,4 @@
-import { getGeminiFlash } from "./client";
+import { getGeminiClient } from "./client";
 import type { ExamCategory, MarkerStatus } from "@/lib/types";
 
 export interface ExtractedMarker {
@@ -108,27 +108,34 @@ Para série branca, crie entradas para AMBOS percentual E valor absoluto quando 
 Categorias válidas: hematologia | bioquimica | hormonal | hepatica | renal | urina | imagem | outros
 Status válidos: normal | alto | baixo | desconhecido`;
 
-export async function extractExamFromGCS(gcsUri: string, mimeType: string): Promise<ExtractedExam> {
-  const model = getGeminiFlash();
+export async function extractExamFromUrl(fileUrl: string, mimeType: string): Promise<ExtractedExam> {
+  // Download the file as base64
+  const response = await fetch(fileUrl);
+  if (!response.ok) throw new Error(`Erro ao baixar arquivo: ${response.statusText}`);
+  const buffer = await response.arrayBuffer();
+  const base64 = Buffer.from(buffer).toString("base64");
 
-  const result = await model.generateContent({
+  const client = getGeminiClient();
+
+  const result = await client.models.generateContent({
+    model: "gemini-2.5-flash",
     contents: [
       {
         role: "user",
         parts: [
-          { fileData: { fileUri: gcsUri, mimeType } },
+          { inlineData: { mimeType, data: base64 } },
           { text: PROMPT },
         ],
       },
     ],
-    generationConfig: {
+    config: {
       responseMimeType: "application/json",
       temperature: 0.1,
       maxOutputTokens: 65536,
     },
   });
 
-  const text = result.response.candidates?.[0]?.content?.parts?.[0]?.text;
+  const text = result.text;
   if (!text) throw new Error("Gemini retornou resposta vazia");
 
   const data = JSON.parse(text) as ExtractedExam;

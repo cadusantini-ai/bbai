@@ -86,7 +86,7 @@ export function UploadZone({ userId }: UploadZoneProps) {
             const res = await fetch("/api/exams/process", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ examId, filePath, mimeType: file.type }),
+              body: JSON.stringify({ examId, fileUrl, mimeType: file.type }),
             });
 
             if (!res.ok) {
