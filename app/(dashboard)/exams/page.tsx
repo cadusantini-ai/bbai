@@ -66,7 +66,7 @@ export default function ExamsPage() {
                 </p>
                 <div className="space-y-2">
                   {exams.map((exam) => (
-                    <ExamCard key={exam.id} exam={exam} />
+                    <ExamCard key={exam.id} exam={exam} userId={user.uid} />
                   ))}
                 </div>
               </div>

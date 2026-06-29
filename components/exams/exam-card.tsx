@@ -1,10 +1,14 @@
 "use client";
 
-import { FlaskConical, Loader2, AlertCircle, CheckCircle2, Clock } from "lucide-react";
+import { useState } from "react";
+import { FlaskConical, Loader2, AlertCircle, CheckCircle2, Clock, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import type { Exam, ExamCategory } from "@/lib/types";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { deleteDocument, userCollection } from "@/lib/firebase/firestore";
+import { getDocs, query, where, writeBatch } from "firebase/firestore";
+import { db } from "@/lib/firebase/firestore";
 
 const CATEGORY_LABEL: Record<ExamCategory, string> = {
   hematologia: "Hematologia",
@@ -30,10 +34,31 @@ const CATEGORY_COLOR: Record<ExamCategory, string> = {
 
 interface ExamCardProps {
   exam: Exam;
+  userId: string;
 }
 
-export function ExamCard({ exam }: ExamCardProps) {
+export function ExamCard({ exam, userId }: ExamCardProps) {
+  const [deleting, setDeleting] = useState(false);
   const isProcessing = exam.status === "uploading" || exam.status === "processing";
+
+  async function handleDelete() {
+    setDeleting(true);
+    try {
+      // Delete associated markers first
+      const markersCol = userCollection(userId, "exam_markers");
+      const q = query(markersCol, where("examId", "==", exam.id ?? ""));
+      const snap = await getDocs(q);
+      if (snap.docs.length > 0) {
+        const batch = writeBatch(db);
+        snap.docs.forEach((d) => batch.delete(d.ref));
+        await batch.commit();
+      }
+      // Delete the exam doc
+      if (exam.id) await deleteDocument(userId, "exams", exam.id);
+    } catch {
+      setDeleting(false);
+    }
+  }
 
   return (
     <Card className="bg-card border-border">
@@ -84,10 +109,23 @@ export function ExamCard({ exam }: ExamCardProps) {
             )}
           </div>
 
-          <div className="shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             {isProcessing && <Loader2 className="h-4 w-4 text-primary animate-spin" />}
             {exam.status === "done" && <CheckCircle2 className="h-4 w-4 text-chart-1" />}
             {exam.status === "error" && <AlertCircle className="h-4 w-4 text-destructive" />}
+
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="p-1 rounded text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-30"
+              title="Remover exame"
+            >
+              {deleting ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Trash2 className="h-3.5 w-3.5" />
+              )}
+            </button>
           </div>
         </div>
 
