@@ -36,20 +36,29 @@ export function UploadZone({ userId }: UploadZoneProps) {
       const { file } = uploadingFile;
       const uid = uploadingFile.id;
 
-      const examRef = await addDocument(userId, "exams", {
-        fileName: file.name,
-        fileSize: file.size,
-        mimeType: file.type,
-        status: "uploading",
-        examDate: null,
-        labName: null,
-        category: null,
-        markerCount: 0,
-        errorMessage: null,
-        extractedAt: null,
-        fileUrl: "",
-        filePath: "",
-      });
+      let examRef;
+      try {
+        examRef = await addDocument(userId, "exams", {
+          fileName: file.name,
+          fileSize: file.size,
+          mimeType: file.type,
+          status: "uploading",
+          examDate: null,
+          labName: null,
+          category: null,
+          markerCount: 0,
+          errorMessage: null,
+          extractedAt: null,
+          fileUrl: "",
+          filePath: "",
+        });
+      } catch (err) {
+        updateFile(uid, {
+          status: "error",
+          error: err instanceof Error ? err.message : "Erro ao criar registro no banco",
+        });
+        return;
+      }
 
       const examId = examRef.id;
       updateFile(uid, { examId });
