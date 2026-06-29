@@ -9,6 +9,7 @@ import {
   Dumbbell,
   FlaskConical,
   Heart,
+  LogOut,
   Moon,
   Pill,
   Shield,
@@ -16,7 +17,8 @@ import {
   Target,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { logout } from "@/lib/firebase/auth";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: Heart },
@@ -34,6 +36,13 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  async function handleLogout() {
+    await logout();
+    await fetch("/api/auth/session", { method: "DELETE" });
+    router.replace("/login");
+  }
 
   return (
     <aside className="w-60 shrink-0 border-r border-border bg-background flex flex-col h-screen sticky top-0">
@@ -64,8 +73,15 @@ export function Sidebar() {
         ))}
       </nav>
 
-      <div className="px-5 py-3 border-t border-border">
-        <p className="text-[10px] text-muted-foreground/40 uppercase tracking-widest">
+      <div className="px-3 py-3 border-t border-border space-y-1">
+        <button
+          onClick={handleLogout}
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary/60 hover:text-foreground transition-colors"
+        >
+          <LogOut className="h-4 w-4 shrink-0" />
+          Sair
+        </button>
+        <p className="px-3 text-[10px] text-muted-foreground/40 uppercase tracking-widest">
           v0.1.0-beta
         </p>
       </div>
