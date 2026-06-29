@@ -108,41 +108,122 @@ Para série branca, crie entradas para AMBOS percentual E valor absoluto quando 
 Categorias válidas: hematologia | bioquimica | hormonal | hepatica | renal | urina | imagem | outros
 Status válidos: normal | alto | baixo | desconhecido`;
 
-export async function extractExamFromUrl(fileUrl: string, mimeType: string): Promise<ExtractedExam> {
-  // Download the file as base64
-  const response = await fetch(fileUrl);
-  if (!response.ok) throw new Error(`Erro ao baixar arquivo: ${response.statusText}`);
-  const buffer = await response.arrayBuffer();
-  const base64 = Buffer.from(buffer).toString("base64");
+const FILES_BASE = "https://generativelanguage.googleapis.com";
 
-  const client = getGeminiClient();
-
-  const result = await client.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: [
-      {
-        role: "user",
-        parts: [
-          { inlineData: { mimeType, data: base64 } },
-          { text: PROMPT },
-        ],
+async function uploadToGeminiFiles(buffer: Buffer, mimeType: string, apiKey: string): Promise<string> {
+  // Initiate resumable upload
+  const initRes = await fetch(
+    `${FILES_BASE}/upload/v1beta/files?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: {
+        "X-Goog-Upload-Protocol": "resumable",
+        "X-Goog-Upload-Command": "start",
+        "X-Goog-Upload-Header-Content-Length": String(buffer.length),
+        "X-Goog-Upload-Header-Content-Type": mimeType,
+        "Content-Type": "application/json",
       },
-    ],
-    config: {
-      responseMimeType: "application/json",
-      temperature: 0.1,
-      maxOutputTokens: 65536,
-    },
-  });
+      body: JSON.stringify({ file: { display_name: "exam" } }),
+    }
+  );
 
-  const text = result.text;
-  if (!text) throw new Error("Gemini retornou resposta vazia");
-
-  const data = JSON.parse(text) as ExtractedExam;
-
-  if (!data.markers || !Array.isArray(data.markers)) {
-    throw new Error("Formato de resposta inválido");
+  if (!initRes.ok) {
+    const err = await initRes.text();
+    throw new Error(`Falha ao iniciar upload para Gemini Files: ${err}`);
   }
 
-  return data;
+  const uploadUrl = initRes.headers.get("x-goog-upload-url");
+  if (!uploadUrl) throw new Error("Upload URL não recebida do Gemini Files API");
+
+  // Upload bytes
+  const uploadRes = await fetch(uploadUrl, {
+    method: "POST",
+    headers: {
+      "Content-Length": String(buffer.length),
+      "X-Goog-Upload-Offset": "0",
+      "X-Goog-Upload-Command": "upload, finalize",
+    },
+    body: new Uint8Array(buffer),
+  });
+
+  if (!uploadRes.ok) {
+    const err = await uploadRes.text();
+    throw new Error(`Falha no upload para Gemini Files: ${err}`);
+  }
+
+  const fileData = await uploadRes.json();
+  const uri = fileData.file?.uri;
+  if (!uri) throw new Error("URI do arquivo não retornada pelo Gemini Files API");
+
+  // Wait if still processing
+  const name = fileData.file?.name;
+  if (fileData.file?.state === "PROCESSING" && name) {
+    for (let i = 0; i < 30; i++) {
+      await new Promise((r) => setTimeout(r, 2000));
+      const statusRes = await fetch(
+        `${FILES_BASE}/v1beta/${name}?key=${apiKey}`
+      );
+      const status = await statusRes.json();
+      if (status.state === "ACTIVE") break;
+      if (status.state === "FAILED") throw new Error("Processamento do arquivo falhou no Gemini");
+    }
+  }
+
+  return uri;
+}
+
+async function deleteGeminiFile(name: string, apiKey: string) {
+  await fetch(`${FILES_BASE}/v1beta/${name}?key=${apiKey}`, { method: "DELETE" }).catch(() => {});
+}
+
+export async function extractExamFromUrl(fileUrl: string, mimeType: string): Promise<ExtractedExam> {
+  const apiKey = process.env.GEMINI_API_KEY!;
+
+  const response = await fetch(fileUrl);
+  if (!response.ok) throw new Error(`Erro ao baixar arquivo: ${response.statusText}`);
+  const arrayBuffer = await response.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+
+  // Upload via Files API for reliable large-file handling
+  const fileUri = await uploadToGeminiFiles(buffer, mimeType, apiKey);
+
+  const client = getGeminiClient();
+  let fileName: string | undefined;
+
+  try {
+    // Extract file name for cleanup (uri format: .../files/FILE_ID)
+    fileName = fileUri.split("/files/")[1]
+      ? `files/${fileUri.split("/files/")[1]}`
+      : undefined;
+
+    const result = await client.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { fileData: { fileUri, mimeType } },
+            { text: PROMPT },
+          ],
+        },
+      ],
+      config: {
+        responseMimeType: "application/json",
+        temperature: 0.1,
+        maxOutputTokens: 32768,
+      },
+    });
+
+    const text = result.text;
+    if (!text) throw new Error("Gemini retornou resposta vazia");
+
+    const data = JSON.parse(text) as ExtractedExam;
+    if (!data.markers || !Array.isArray(data.markers)) {
+      throw new Error("Formato de resposta inválido");
+    }
+
+    return data;
+  } finally {
+    if (fileName) await deleteGeminiFile(fileName, apiKey);
+  }
 }
